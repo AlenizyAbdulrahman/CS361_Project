@@ -1,56 +1,57 @@
 class AstarSearch:
 
     #creat class constructor that takes two parameters: tree and heuristic 
-    def __init__(self, tree, heuristic):
+    def __init__(self, tree:dict, heuristic:dict):
         self.tree       = tree
         self.heuristic  = heuristic 
 
     #A* search algorithm function
     #this function used constructor variables and returns two parameters : visited node & Optimal path
-    def a_star_search_algorithm(self, start, Goal):
+    def a_star_search_algorithm(self, start:chr, Goal:chr):
         self.Expand_nodes = []     # Expanded nodes
         self.fringe_nodes = []     # Fringe nodes
-        self.cost = {start: 0}     #initial cost of paths
-        self.start_heuristic = self.heuristic[start]       #getting start state heuristic
-        self.fringe_nodes = [[start,self.start_heuristic]] #add start state and its heuristic to fringe node
+        self.path_cost = {start: 0}     #initial cost of paths
+        self.start_heuristic = self.heuristic[start]       #getting start node heuristic
+        self.fringe_nodes = [[start,self.start_heuristic]] #add start state and its heuristic to fringe
 
-        #find visited nodes
+        #find expanded nodes
         while True:
-            self.hn = [i[1] for i in self.fringe_nodes]     # determine h(n): for current state 
-            self.min_value_hn = self.hn.index(min(self.hn)) # take the smallest node value of h(n) from fringe nodes "value"
+            self.fn_values = [i[1] for i in self.fringe_nodes] # take f(n) value for all nodes in fringe
+            self.small_fn_index = self.fn_values.index(min(self.fn_values)) # take index of smallest f(n) from fn_values
+            self.small_node_fn_char  = self.fringe_nodes[self.small_fn_index][0]  # take character that related to index
 
-            self.small_node_char = self.fringe_nodes[self.min_value_hn][0]  # determine character of smallest node value
-            self.Expand_nodes.append(self.fringe_nodes[self.min_value_hn]) # add smallest h(n) node to expand nodes
-            del self.fringe_nodes[self.min_value_hn] # delete smallest node value from fringe
+            self.Expand_nodes.append(self.fringe_nodes[self.small_fn_index]) # add smallest f(n) node to expand
+            del self.fringe_nodes[self.small_fn_index] # delete smallest node value from fringe
             if self.Expand_nodes[-1][0] == Goal:  # break the loop if Goal state has been expanded
                 break
-
-            for self.item in self.tree[self.small_node_char]: # if goal not in expand, then go to next node that have the smallest value
-                if self.item[0] in [self.closed_item[0] for self.closed_item in self.Expand_nodes]: # check whether parent node contain children node
+            
+            for self.item in self.tree[self.small_node_fn_char]: # go throug all current state neighbores
+                if self.item[0] in [self.expand_item[0] for self.expand_item in self.Expand_nodes]: # check if any of current node neighbors in expand node then skip it
                     continue
-                self.cost.update({self.item[0]: self.cost[self.small_node_char] + self.item[1]})            # add nodes to self.cost dictionary
-                self.fn_node = self.cost[self.small_node_char] + heuristic[self.item[0]] + self.item[1]     # calculate f(n) of current node
-                temp = [self.item[0], self.fn_node]
-                self.fringe_nodes.append(temp)                                     # store f(n) of current node in array opened
+                             # current node char:   path cost for previous node              + actual cost to current node 
+                self.path_cost.update({self.item[0]: self.path_cost[self.small_node_fn_char] + self.item[1]}) # add the total actual cost from the start node to the current node
 
-            #-------------------------------------------------------------------------------------------------------
-                '''find optimal sequence'''
-            trace_node = Goal                        # correct optimal tracing node, initialize as node G
-            optimal_sequence = [Goal]                # optimal node sequence
-            for i in range(len(self.Expand_nodes)-2, -1, -1):
-                check_node = self.Expand_nodes[i][0]           # current node
-                if trace_node in [children[0] for children in tree[check_node]]:
-                    children_costs = [temp[1] for temp in tree[check_node]]
-                    children_nodes = [temp[0] for temp in tree[check_node]]
+                                #path cost for previous node            + current node heuristic  + actual cost to current node 
+                self.fn_value = self.path_cost[self.small_node_fn_char] + heuristic[self.item[0]] + self.item[1] # calculate f(n) value for current node
+                self.temp = [self.item[0], self.fn_value] # take currnt node char and its f(n) value 
+                self.fringe_nodes.append(self.temp) # store temp in fringe
+        print("Fringe Node: ", self.fringe_nodes)
+        print("Expanded Node: ", self.Expand_nodes)
+        self.optimal(Goal)
+        print("Total Cost: ", max(self.path_cost.values()))
 
-                    '''check whether h(s) + g(s) = f(s). If so, append current node to optimal sequence
-                    change the correct optimal tracing node to current node'''
-                    if self.cost[check_node] + children_costs[children_nodes.index(trace_node)] == self.cost[trace_node]:
-                        optimal_sequence.append(check_node)
-                        trace_node = check_node
-        print(optimal_sequence)
-        print(self.Expand_nodes)
-        print(self.cost)
+   #this function recieve the goal state and parint the optimal path  
+    def optimal(self, Goal):
+        self.optimal_path = [Goal] # optimal node sequence
+        for i in range(len(self.Expand_nodes)-2,-1,-1): # start from last node in expand and move until reach the first node
+            self.current_node_char = self.Expand_nodes[i][0] # take current node char 
+            if Goal in [self.children[0] for self.children in self.tree[self.current_node_char]]: # check if current node related to goal
+                self.optimal_path.append(self.current_node_char) # add current node to optimal path
+                Goal = self.current_node_char # change goal to current node
+        self.optimal_path.reverse()
+        print("Optimal Path: ", self.optimal_path)
+
+  
 
 
 if __name__ == "__main__":
@@ -68,9 +69,11 @@ if __name__ == "__main__":
         'G1': [ ['R6',1] ],
         'G2': [ ['R6',1] ],
         'G3': [ ['R6',1] ],
-        'G4': [ ['R6',1] ]  
+        'G4': [ ['R6',1] ]
+        
     }
 
     heuristic = {'A': 14, 'B': 14, 'C': 14, 'D': 14, 'R1': 13, 'R2': 10, 'R3': 9, 'R4': 7, 'R5': 6, 'R6': 1, 'G1': 0, 'G2': 0, 'G3': 0, 'G4': 0}
+
     astar= AstarSearch(tree, heuristic)
-    astar.a_star_search_algorithm('A','G2')
+    astar.a_star_search_algorithm('A','G1')
